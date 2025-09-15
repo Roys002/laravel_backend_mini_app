@@ -13,7 +13,6 @@ class ProductSeeder extends Seeder
      */
     public function run(): void
     {
-        Product::create(['name' => 'Laptop', 'price' => 1200.00, 'description' => 'Powerful laptop']);
-        Product::create(['name' => 'Phone', 'price' => 600.00, 'description' => 'Smartphone']);
+        Product::factory()->count(20)->create();
     }
 }

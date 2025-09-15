@@ -19,13 +19,11 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/profile', [AuthController::class, 'profile']);
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/products', [ProductController::class, 'index']);
+    Route::apiResource('products', \App\Http\Controllers\Api\ProductController::class);
 });
 
 // Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 //     return $request->user();
 // });
-
-
-lamaran ini ditulis agak lebih casual tapi tetap profesional, tuliskan dalam Bahasa Indonesia, bikinkan CV singkat (1 halaman) biar selaras sama cover letter ini,
