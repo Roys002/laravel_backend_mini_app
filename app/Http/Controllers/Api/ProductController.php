@@ -13,6 +13,15 @@ use App\Helpers\ApiResponse;
 
 class ProductController extends Controller
 {
+    public function __construct()
+    {
+        // semua method butuh auth
+        $this->middleware('auth:sanctum');
+
+        // hanya admin yang boleh create/update/delete
+        $this->middleware('role:admin')->only(['store', 'update', 'destroy']);
+    }
+    
     public function index(Request $request)
     {
         $query = Product::query();

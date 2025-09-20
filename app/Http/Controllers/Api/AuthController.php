@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Models\RefreshToken;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -23,6 +25,8 @@ class AuthController extends Controller
             'email' => $fields['email'],
             'password' => bcrypt($fields['password']),
         ]);
+        // assign role default 'user'
+        $user->assignRole('user');
 
         $token = $user->createToken('apptoken')->plainTextToken;
 
@@ -31,23 +35,58 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $fields = $request->validate([
+        $credentials = $request->validate([
             'email' => 'required|email',
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $fields['email'])->first();
-
-        if (!$user || !Hash::check($fields['password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
+        if (!auth()->attempt($credentials)) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $user = $request->user();
+        $accessToken = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json(['user' => $user, 'token' => $token]);
+        // generate refresh token
+        $refreshToken = Str::random(64);
+        RefreshToken::updateOrCreate(
+            ['user_id' => $user->id],
+            ['refresh_token' => $refreshToken]
+        );
+
+        return response()->json([
+            'access_token' => $accessToken,
+            'refresh_token' => $refreshToken,
+            'token_type' => 'bearer',
+            'expires_in' => 3600 // contoh: 1 jam
+        ]);
     }
+
+    public function refresh(Request $request)
+    {
+        $request->validate([
+            'refresh_token' => 'required|string'
+        ]);
+
+        $stored = RefreshToken::where('refresh_token', $request->refresh_token)->first();
+
+        if (!$stored) {
+            return response()->json(['message' => 'Invalid refresh token'], 401);
+        }
+
+        $user = $stored->user;
+
+        // buat access_token baru
+        $accessToken = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'access_token' => $accessToken,
+            'refresh_token' => $stored->refresh_token, // tetap pakai refresh_token lama
+            'token_type' => 'bearer',
+            'expires_in' => 3600
+        ]);
+    }
+
 
     public function profile(Request $request)
     {
