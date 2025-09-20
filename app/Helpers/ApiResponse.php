@@ -18,7 +18,16 @@ class ApiResponse
         return response()->json([
             'status'  => 'error',
             'message' => $message,
-            'errors'    => $errors ,
+            'errors'    => $errors,
         ], $code);
+    }
+
+    public static function validationError($errors, string $message = 'Validation failed')
+    {
+        return response()->json([
+            'status' => 'error',
+            'message' => $message,
+            'errors'  => $errors,
+        ], 422);
     }
 }
